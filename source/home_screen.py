@@ -23,22 +23,40 @@ class Application(tk.Frame):
         self.toolbar = tk.Frame(self, bg="#eee")
         self.toolbar.pack(side="top", fill="x")
 
-        self.new_btn = tk.Button(self.toolbar, text="New", command=self.new)
+        new_icon = tk.PhotoImage(file="image/new.gif")
+        self.new_btn = tk.Button(self.toolbar, image=new_icon, command=self.new)
+        self.new_btn.image = new_icon
+        self.new_btn.config(relief=tk.GROOVE)
         self.new_btn.pack(side="left")
 
-        self.read_btn = tk.Button(self.toolbar, text="Open", command=self.read)
+        open_icon = tk.PhotoImage(file="image/open.gif")
+        self.read_btn = tk.Button(self.toolbar, image=open_icon, command=self.read)
+        self.read_btn.image = open_icon
+        self.read_btn.config(relief=tk.GROOVE)
         self.read_btn.pack(side="left")
 
-        self.save_btn = tk.Button(self.toolbar, text="Save", command=self.save)
+        save_icon = tk.PhotoImage(file="image/save.gif")
+        self.save_btn = tk.Button(self.toolbar, image=save_icon, command=self.save)
+        self.save_btn.image = save_icon
+        self.save_btn.config(relief=tk.GROOVE)
         self.save_btn.pack(side="left")
 
-        self.bold_btn = tk.Button(self.toolbar, text="Highlight", command=self.make_highlight)
-        self.bold_btn.pack(side="left")
+        highlight_icon = tk.PhotoImage(file="image/highlight.gif")
+        self.highlight_btn = tk.Button(self.toolbar, image=highlight_icon, command=self.make_highlight)
+        self.highlight_btn.image = highlight_icon
+        self.highlight_btn.config(relief=tk.GROOVE)
+        self.highlight_btn.pack(side="left")
 
-        self.clear_btn = tk.Button(self.toolbar, text="Clear", command=self.clear)
+        clear_icon = tk.PhotoImage(file="image/clear.gif")
+        self.clear_btn = tk.Button(self.toolbar, imag=clear_icon, command=self.clear)
+        self.clear_btn.image = clear_icon
+        self.clear_btn.config(relief=tk.GROOVE)
         self.clear_btn.pack(side="left")
 
-        self.quit = tk.Button(self.toolbar, text="Quit", fg="red", command=self.master.destroy)
+        close_icon = tk.PhotoImage(file="image/close.gif")
+        self.quit = tk.Button(self.toolbar, image=close_icon, command=self.close)
+        self.quit.image = close_icon
+        self.quit.config(relief=tk.FLAT)
         self.quit.pack(side="right")
 
         # Creates a bold font
@@ -95,16 +113,23 @@ class Application(tk.Frame):
     def make_highlight(self):
         # tk.TclError exception is raised if not text is selected
         try:
-            self.note_editor.editor.tag_add("BOLDFONT", "sel.first", "sel.last")
-            self.note_editor.editor.tag_add("HIGHLIGHT", "sel.first", "sel.last")
-            self.note_editor.editor.tag_add("BACKGROUND", "sel.first", "sel.last")
+            tab_id = self.notebook.select()
+            self.note_editor_dictionary[tab_id].editor.tag_add("BOLDFONT", "sel.first", "sel.last")
+            self.note_editor_dictionary[tab_id].editor.tag_add("HIGHLIGHT", "sel.first", "sel.last")
+            self.note_editor_dictionary[tab_id].editor.tag_add("BACKGROUND", "sel.first", "sel.last")
         except tk.TclError:
             pass
 
     def clear(self):
-        self.note_editor.editor.tag_remove("BOLDFONT", "1.0", 'end')
-        self.note_editor.editor.tag_remove("HIGHLIGHT", "1.0", 'end')
-        self.note_editor.editor.tag_remove("BACKGROUND", "1.0", 'end')
+        tab_id = self.notebook.select()
+        self.note_editor_dictionary[tab_id].editor.tag_remove("BOLDFONT", "1.0", 'end')
+        self.note_editor_dictionary[tab_id].editor.tag_remove("HIGHLIGHT", "1.0", 'end')
+        self.note_editor_dictionary[tab_id].editor.tag_remove("BACKGROUND", "1.0", 'end')
+
+    def close(self):
+        tab_id = self.notebook.select()
+        self.notebook.forget(tab_id)
+        del self.note_editor_dictionary[tab_id]
 
 
 if __name__ == '__main__':
