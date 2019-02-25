@@ -1,6 +1,8 @@
 import tkinter.filedialog as tk_filedialog
 import tkinter.messagebox as tk_messagebox
 
+from source.configuration import Configuration
+
 
 class FileIO:
 
@@ -9,14 +11,20 @@ class FileIO:
     def __init__(self):
         self.file_name = None
         self.file_data = None
+        self.encoding = 'UTF8'
 
     def read(self):
         self.file_name = tk_filedialog.askopenfilename(filetypes=(("Text files", "*.txt"),
                                        ("All files", "*.*")))
         if self.file_name:
-            with open(self.file_name, "r", encoding='EUC-JP') as file_read_handler:
-                self.file_data = file_read_handler.read()
-            return True
+            if 'encoding' in Configuration.common:
+                self.encoding = Configuration.common['encoding']
+            try:
+                with open(self.file_name, "r", encoding=self.encoding) as file_read_handler:
+                    self.file_data = file_read_handler.read()
+                return True
+            except:
+                return False
         else:
             tk_messagebox.showerror('Failed', 'No files are selected!!!')
             return False
