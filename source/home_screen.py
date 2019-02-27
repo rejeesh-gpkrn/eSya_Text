@@ -153,6 +153,7 @@ class Application(tk.Frame):
             self.note_editor_dictionary[tab_id].page_name = os.path.basename(
                 self.note_editor_dictionary[tab_id].file_io.file_name)
             self.notebook.tab(tab_id, text=self.note_editor_dictionary[tab_id].page_name)
+        self.show_status()
 
     def save_as(self):
         tab_id = self.notebook.select()
@@ -224,3 +225,19 @@ class Application(tk.Frame):
 
     def on_leave_close(self, e):
         e.widget.config(relief=tk.FLAT)
+
+    def show_status(self):
+        toplevel = tk.Toplevel(self.master, width=50)
+        width = self.master.winfo_screenwidth()
+        height = self.master.winfo_screenheight()
+        w = toplevel.winfo_width()
+        h = toplevel.winfo_height()
+        x = (width // 2) - (w // 2)
+        y = (height // 2) - (h // 2)
+        toplevel.geometry('{}x{}+{}+{}'.format(100, 50, x, y))
+        label1 = tk.Label(toplevel, text='Saved', height=0, width=50)
+        label1.pack()
+        label2 = tk.Label(toplevel, text='Disclaimer', height=0, width=50)
+        label2.pack()
+        toplevel.overrideredirect(True)
+        toplevel.after(1000, lambda: toplevel.destroy())
