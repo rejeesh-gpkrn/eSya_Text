@@ -7,6 +7,7 @@ from tkinter.font import Font
 from datetime import datetime
 import tkinter.messagebox as tk_messagebox
 
+from source.command_parser import CommandParser
 from source.configuration import Configuration
 from source.file_io import FileIO
 from source.note_editor import NoteEditor
@@ -22,13 +23,14 @@ class Application(tk.Frame):
         self.pack()
         self.note_editor_dictionary = {}
         self.command_var = tk.StringVar()
+        self.command_parser = CommandParser()
         self.create_widgets()
 
     def create_widgets(self):
         self.toolbar = tk.Frame(self, bg="#eee")
         self.toolbar.pack(side="top", fill="x")
 
-        new_icon = tk.PhotoImage(file="eSya_Text/source/image/new.gif")
+        new_icon = tk.PhotoImage(file="source/image/new.gif")
         self.new_btn = tk.Button(self.toolbar, image=new_icon, command=self.new)
         self.new_btn.image = new_icon
         self.new_btn.config(relief=tk.GROOVE)
@@ -36,7 +38,7 @@ class Application(tk.Frame):
         self.new_btn.bind('<Leave>', self.on_leave)
         self.new_btn.pack(side="left")
 
-        open_icon = tk.PhotoImage(file="eSya_Text/source/image/open.gif")
+        open_icon = tk.PhotoImage(file="source/image/open.gif")
         self.read_btn = tk.Button(self.toolbar, image=open_icon, command=self.read)
         self.read_btn.image = open_icon
         self.read_btn.config(relief=tk.GROOVE)
@@ -44,7 +46,7 @@ class Application(tk.Frame):
         self.read_btn.bind('<Leave>', self.on_leave)
         self.read_btn.pack(side="left")
 
-        save_icon = tk.PhotoImage(file="eSya_Text/source/image/save.gif")
+        save_icon = tk.PhotoImage(file="source/image/save.gif")
         self.save_btn = tk.Button(self.toolbar, image=save_icon, command=self.save)
         self.save_btn.image = save_icon
         self.save_btn.config(relief=tk.GROOVE)
@@ -52,7 +54,7 @@ class Application(tk.Frame):
         self.save_btn.bind('<Leave>', self.on_leave)
         self.save_btn.pack(side="left")
 
-        highlight_icon = tk.PhotoImage(file="eSya_Text/source/image/highlight.gif")
+        highlight_icon = tk.PhotoImage(file="source/image/highlight.gif")
         self.highlight_btn = tk.Button(self.toolbar, image=highlight_icon, command=self.make_highlight)
         self.highlight_btn.image = highlight_icon
         self.highlight_btn.config(relief=tk.GROOVE)
@@ -60,7 +62,7 @@ class Application(tk.Frame):
         self.highlight_btn.bind('<Leave>', self.on_leave)
         self.highlight_btn.pack(side="left")
 
-        clear_icon = tk.PhotoImage(file="eSya_Text/source/image/clear.gif")
+        clear_icon = tk.PhotoImage(file="source/image/clear.gif")
         self.clear_btn = tk.Button(self.toolbar, image=clear_icon, command=self.clear)
         self.clear_btn.image = clear_icon
         self.clear_btn.config(relief=tk.GROOVE)
@@ -75,10 +77,11 @@ class Application(tk.Frame):
         self.command_box = tk.Entry(self.toolbar, textvariable=self.command_var)
         self.command_box.config(bg='#CCDDFF')
         self.command_box.config(fg='#771133')
+        self.command_box.bind('<Return>', self.command_issue)
         self.command_box.config(relief=tk.GROOVE)
         self.command_box.pack(side='left')
 
-        command_issue_icon = tk.PhotoImage(file="eSya_Text/source/image/command_issue.gif")
+        command_issue_icon = tk.PhotoImage(file="source/image/command_issue.gif")
         self.command_issue_btn = tk.Button(self.toolbar, image=command_issue_icon, command=self.command_issue)
         self.command_issue_btn.image = command_issue_icon
         self.command_issue_btn.config(relief=tk.GROOVE)
@@ -87,7 +90,7 @@ class Application(tk.Frame):
         self.command_issue_btn.pack(side="left")
 
 
-        close_icon = tk.PhotoImage(file="eSya_Text/source/image/close.gif")
+        close_icon = tk.PhotoImage(file="source/image/close.gif")
         self.close = tk.Button(self.toolbar, image=close_icon, command=self.close)
         self.close.image = close_icon
         self.close.config(relief=tk.FLAT)
@@ -135,18 +138,24 @@ class Application(tk.Frame):
     def save(self):
         tab_id = self.notebook.select()
         self.note_editor_dictionary[tab_id].file_io.file_data = self.note_editor_dictionary[tab_id].editor.get("1.0", 'end-1c')
-        self.note_editor_dictionary[tab_id].file_io.save()
+        file_write_status = self.note_editor_dictionary[tab_id].file_io.save()
+        if file_write_status is not None:
+            tk_messagebox.showerror('Failed', file_write_status)
+        else:
+            self.note_editor_dictionary[tab_id].page_name = os.path.basename(
+                self.note_editor_dictionary[tab_id].file_io.file_name)
+            self.notebook.tab(tab_id, text=self.note_editor_dictionary[tab_id].page_name)
 
     def read(self):
         note_editor = NoteEditor()
-        is_file_read_success = note_editor.file_io.read()
-        if is_file_read_success:
+        file_read_status = note_editor.file_io.read()
+        if file_read_status is None:
             note_editor.page_name = os.path.basename(note_editor.file_io.file_name)
             self.create_editor_frame(note_editor)
             note_editor.editor.insert(tk.END, note_editor.file_io.file_data)
             self.note_editor_dictionary[note_editor.id] = note_editor
         else:
-            tk_messagebox.showerror('Failed', 'Unable to read file.')
+            tk_messagebox.showerror('Failed', file_read_status)
 
     def make_highlight(self):
         # tk.TclError exception is raised if not text is selected
@@ -169,17 +178,22 @@ class Application(tk.Frame):
         self.notebook.forget(tab_id)
         del self.note_editor_dictionary[tab_id]
 
-    def command_issue(self):
+    def command_issue(self, event=None):
         tab_id = self.notebook.select()
-        result = Configuration.execute_user_command(self.command_var.get())
+        result = self.command_parser.execute(self.command_var.get())
+        # result = Configuration.execute_user_command(self.command_var.get())
         error_message = None
         if result == 1:
             error_message = 'No command specified'
         elif result == 2:
             error_message = 'Expected command format is "key:value"'
+        elif result == 3:
+            error_message = 'Can\'t perform the action'
         else:
             error_message = None
-        print(Configuration.common)
+
+        print('Updated user commands [', Configuration.common, ']')
+
         if result != 0:
             tk_messagebox.showerror('Failed', error_message)
 

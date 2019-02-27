@@ -1,3 +1,4 @@
+import sys
 import tkinter.filedialog as tk_filedialog
 import tkinter.messagebox as tk_messagebox
 
@@ -11,32 +12,37 @@ class FileIO:
     def __init__(self):
         self.file_name = None
         self.file_data = None
-        self.encoding = 'UTF8'
+        self.encoding = None
 
     def read(self):
-        self.file_name = tk_filedialog.askopenfilename(filetypes=(("Text files", "*.txt"),
-                                       ("All files", "*.*")))
+        self.file_name = tk_filedialog.askopenfilename(filetypes=(("All files", "*.*"),
+                                                                  ("Text files", "*.txt")))
         if self.file_name:
-            if 'encoding' in Configuration.common:
-                self.encoding = Configuration.common['encoding']
+            self.encoding = Configuration.common['encoding'] if 'encoding' in Configuration.common else 'UTF8'
             try:
                 with open(self.file_name, "r", encoding=self.encoding) as file_read_handler:
                     self.file_data = file_read_handler.read()
-                return True
+                return None
             except:
-                return False
+                return sys.exc_info()
         else:
-            tk_messagebox.showerror('Failed', 'No files are selected!!!')
-            return False
+            value_error = ValueError('Empty file name.')
+            return value_error
 
     def save(self):
-        if self.file_name is None:
-            self.file_name = tk_filedialog.asksaveasfilename(filetypes = (("Text files", "*.txt"),
-                                       ("All files", "*.*")))
+        if self.file_name is None or self.file_name is '':
+            self.file_name = tk_filedialog.asksaveasfilename(filetypes=(("All files", "*.*"),
+                                                                          ("Text files", "*.txt")))
             if self.file_name is None or self.file_name is '':
                 tk_messagebox.showerror('Failed', 'No filename selected!!!')
                 return
         if self.file_data is None:
             self.file_data = ''
-        with open(self.file_name, "w") as file_write_handler:
-            file_write_handler.write(self.file_data)
+        if self.encoding is None:
+            self.encoding = Configuration.common['encoding'] if 'encoding' in Configuration.common else 'UTF8'
+        try:
+            with open(self.file_name, "w", encoding=self.encoding) as file_write_handler:
+                file_write_handler.write(self.file_data)
+            return None
+        except:
+            return sys.exc_info()
