@@ -1,4 +1,4 @@
-from source.image.command_router import CommandRouter
+from source.command_router import CommandRouter
 
 
 class CommandParser:
@@ -12,13 +12,11 @@ class CommandParser:
         if command is None or command == '':
             return 1
 
-        command = command.lower()
-
         tokens = command.split('=')
         if len(tokens) < 2:
             return 2
 
-        key = tokens[0].strip()
+        key = tokens[0].strip().lower()
         value = tokens[1].strip()
         if not hasattr(self.command_router, key):
             return 3

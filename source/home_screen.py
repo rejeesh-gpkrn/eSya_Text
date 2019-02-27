@@ -54,6 +54,14 @@ class Application(tk.Frame):
         self.save_btn.bind('<Leave>', self.on_leave)
         self.save_btn.pack(side="left")
 
+        save_as_icon = tk.PhotoImage(file="source/image/save_as.gif")
+        self.save_as_btn = tk.Button(self.toolbar, image=save_as_icon, command=self.save_as)
+        self.save_as_btn.image = save_as_icon
+        self.save_as_btn.config(relief=tk.GROOVE)
+        self.save_as_btn.bind('<Enter>', self.on_enter)
+        self.save_as_btn.bind('<Leave>', self.on_leave)
+        self.save_as_btn.pack(side="left")
+
         highlight_icon = tk.PhotoImage(file="source/image/highlight.gif")
         self.highlight_btn = tk.Button(self.toolbar, image=highlight_icon, command=self.make_highlight)
         self.highlight_btn.image = highlight_icon
@@ -146,6 +154,14 @@ class Application(tk.Frame):
                 self.note_editor_dictionary[tab_id].file_io.file_name)
             self.notebook.tab(tab_id, text=self.note_editor_dictionary[tab_id].page_name)
 
+    def save_as(self):
+        tab_id = self.notebook.select()
+        data_to_copy = self.note_editor_dictionary[tab_id].editor.get("1.0", 'end-1c')
+        self.new()
+        new_tab_id = self.notebook.select()
+        self.note_editor_dictionary[new_tab_id].editor.insert(tk.END, data_to_copy)
+        self.save()
+
     def read(self):
         note_editor = NoteEditor()
         file_read_status = note_editor.file_io.read()
@@ -208,11 +224,3 @@ class Application(tk.Frame):
 
     def on_leave_close(self, e):
         e.widget.config(relief=tk.FLAT)
-
-#if __name__ == '__main__':
-#    root = tk.Tk()
-#    root.state('zoomed')
-#    root.title('eSya Text')
-#    # root.tk.call('tk', 'scaling', 1.0)
-#    app = Application(master=root)
-#`    app.mainloop()
