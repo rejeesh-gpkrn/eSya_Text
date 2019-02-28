@@ -25,6 +25,11 @@ class Application(tk.Frame):
         self.command_var = tk.StringVar()
         self.command_parser = CommandParser()
         self.create_widgets()
+        self.key_binding()
+
+    def key_binding(self):
+        self.master.bind("<Control-s>", self.control_s)
+        self.master.bind("<Control-S>", self.control_s)
 
     def create_widgets(self):
         self.toolbar = tk.Frame(self, bg="#eee")
@@ -153,7 +158,7 @@ class Application(tk.Frame):
             self.note_editor_dictionary[tab_id].page_name = os.path.basename(
                 self.note_editor_dictionary[tab_id].file_io.file_name)
             self.notebook.tab(tab_id, text=self.note_editor_dictionary[tab_id].page_name)
-        self.show_status()
+            self.show_status('Saved successfully.')
 
     def save_as(self):
         tab_id = self.notebook.select()
@@ -181,6 +186,7 @@ class Application(tk.Frame):
             self.note_editor_dictionary[tab_id].editor.tag_add("BOLDFONT", "sel.first", "sel.last")
             self.note_editor_dictionary[tab_id].editor.tag_add("HIGHLIGHT", "sel.first", "sel.last")
             self.note_editor_dictionary[tab_id].editor.tag_add("BACKGROUND", "sel.first", "sel.last")
+            self.show_status('Selection highlighted.')
         except tk.TclError:
             pass
 
@@ -189,6 +195,7 @@ class Application(tk.Frame):
         self.note_editor_dictionary[tab_id].editor.tag_remove("BOLDFONT", "1.0", 'end')
         self.note_editor_dictionary[tab_id].editor.tag_remove("HIGHLIGHT", "1.0", 'end')
         self.note_editor_dictionary[tab_id].editor.tag_remove("BACKGROUND", "1.0", 'end')
+        self.show_status('Highlight cleared.')
 
     def close(self):
         tab_id = self.notebook.select()
@@ -209,10 +216,11 @@ class Application(tk.Frame):
         else:
             error_message = None
 
-        print('Updated user commands [', Configuration.common, ']')
-
         if result != 0:
             tk_messagebox.showerror('Failed', error_message)
+        else:
+            print('Updated user commands [', Configuration.common, ']')
+            self.show_status('Executed successfully.')
 
     def on_enter(self, e):
         e.widget.config(relief=tk.RIDGE)
@@ -226,18 +234,20 @@ class Application(tk.Frame):
     def on_leave_close(self, e):
         e.widget.config(relief=tk.FLAT)
 
-    def show_status(self):
-        toplevel = tk.Toplevel(self.master, width=50)
+    def control_s(self, event):
+        print(repr(event.char), 'Save key combination.')
+        self.save()
+
+    def show_status(self, message):
+        toplevel = tk.Toplevel(self.master, width=150, height=60)
         width = self.master.winfo_screenwidth()
         height = self.master.winfo_screenheight()
-        w = toplevel.winfo_width()
-        h = toplevel.winfo_height()
+        w = toplevel.winfo_reqwidth()
+        h = toplevel.winfo_reqheight()
         x = (width // 2) - (w // 2)
         y = (height // 2) - (h // 2)
-        toplevel.geometry('{}x{}+{}+{}'.format(100, 50, x, y))
-        label1 = tk.Label(toplevel, text='Saved', height=0, width=50)
+        toplevel.geometry('{}x{}+{}+{}'.format(w, h, x, y))
+        label1 = tk.Label(toplevel, text=message, height=60, width=150, borderwidth=2, relief="groove", fg="#535353")
         label1.pack()
-        label2 = tk.Label(toplevel, text='Disclaimer', height=0, width=50)
-        label2.pack()
         toplevel.overrideredirect(True)
         toplevel.after(1000, lambda: toplevel.destroy())

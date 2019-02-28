@@ -1,7 +1,6 @@
 import sys
 import tkinter.filedialog as tk_filedialog
 import tkinter.messagebox as tk_messagebox
-
 from source.configuration import Configuration
 
 
@@ -34,8 +33,8 @@ class FileIO:
             self.file_name = tk_filedialog.asksaveasfilename(filetypes=(("All files", "*.*"),
                                                                           ("Text files", "*.txt")))
             if self.file_name is None or self.file_name is '':
-                tk_messagebox.showerror('Failed', 'No filename selected!!!')
-                return
+                value_error = ValueError('Empty file name.')
+                return value_error
         if self.file_data is None:
             self.file_data = ''
         if self.encoding is None:
