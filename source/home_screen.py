@@ -1,16 +1,14 @@
 import os as os
-import sys as sys
 import tkinter as tk
-from tkinter import ttk
-from tkinter.scrolledtext import ScrolledText
-from tkinter.font import Font
-from datetime import datetime
 import tkinter.messagebox as tk_messagebox
+from datetime import datetime
+from tkinter import ttk
+from tkinter.font import Font
 
 from source.command_parser import CommandParser
 from source.configuration import Configuration
-from source.file_io import FileIO
 from source.note_editor import NoteEditor
+from source.search_window import SearchWindow
 
 
 class Application(tk.Frame):
@@ -28,8 +26,15 @@ class Application(tk.Frame):
         self.key_binding()
 
     def key_binding(self):
+        self.master.protocol('WM_DELETE_WINDOW', self.on_delete_window)
         self.master.bind("<Control-s>", self.control_s)
         self.master.bind("<Control-S>", self.control_s)
+        self.master.bind("<Control-n>", self.control_n)
+        self.master.bind("<Control-N>", self.control_n)
+        self.master.bind("<Control-o>", self.control_o)
+        self.master.bind("<Control-O>", self.control_o)
+        self.master.bind("<Control-f>", self.control_f)
+        self.master.bind("<Control-F>", self.control_f)
 
     def create_widgets(self):
         self.toolbar = tk.Frame(self, bg="#eee")
@@ -82,6 +87,22 @@ class Application(tk.Frame):
         self.clear_btn.bind('<Enter>', self.on_enter)
         self.clear_btn.bind('<Leave>', self.on_leave)
         self.clear_btn.pack(side="left")
+
+        search_icon = tk.PhotoImage(file="source/image/search.gif")
+        self.searrch_btn = tk.Button(self.toolbar, image=search_icon, command=self.search)
+        self.searrch_btn.image = search_icon
+        self.searrch_btn.config(relief=tk.GROOVE)
+        self.searrch_btn.bind('<Enter>', self.on_enter)
+        self.searrch_btn.bind('<Leave>', self.on_leave)
+        self.searrch_btn.pack(side="left")
+
+        popout_icon = tk.PhotoImage(file="source/image/popout.gif")
+        self.popout_btn = tk.Button(self.toolbar, image=popout_icon, command=self.pop_out)
+        self.popout_btn.image = popout_icon
+        self.popout_btn.config(relief=tk.GROOVE)
+        self.popout_btn.bind('<Enter>', self.on_enter)
+        self.popout_btn.bind('<Leave>', self.on_leave)
+        self.popout_btn.pack(side="left")
 
         # Command box
         self.command_label = tk.Label(self.toolbar, text='  >')
@@ -202,6 +223,26 @@ class Application(tk.Frame):
         self.notebook.forget(tab_id)
         del self.note_editor_dictionary[tab_id]
 
+    def search(self):
+        search_option_window = SearchWindow(self)
+        search_option_window.top.wm_attributes("-topmost", 1)
+        self.master.wait_window(search_option_window.top)
+
+    def search_forward(self, text):
+        tab_id = self.notebook.select()
+        found_search_element = self.note_editor_dictionary[tab_id].search_forward(text)
+        if not found_search_element:
+            tk_messagebox.showinfo('Search', '{} not found.'.format(text))
+
+    def search_backward(self, text):
+        tab_id = self.notebook.select()
+        found_search_element = self.note_editor_dictionary[tab_id].search_backward(text)
+        if not found_search_element:
+            tk_messagebox.showinfo('Search', '{} not found.'.format(text))
+
+    def pop_out(self):
+        tk_messagebox.showinfo('Popout', 'Popped out.')
+
     def command_issue(self, event=None):
         tab_id = self.notebook.select()
         result = self.command_parser.execute(self.command_var.get())
@@ -237,6 +278,26 @@ class Application(tk.Frame):
     def control_s(self, event):
         print(repr(event.char), 'Save key combination.')
         self.save()
+
+    def control_n(self, event):
+        print(repr(event.char), 'New key combination.')
+        self.new()
+
+    def control_o(self, event):
+        print(repr(event.char), 'Open key combination.')
+        self.read()
+
+    def control_f(self, event):
+        print(repr(event.char), 'Search key combination.')
+        self.search()
+
+    def on_delete_window(self):
+        is_user_selection_exit = tk_messagebox.askyesnocancel('Exit', 'Are you sure you want to exit eSya Text?')
+        if is_user_selection_exit:
+            self.master.destroy()
+            print('eSya Text exited.')
+        else:
+            print('User cancelled exit.')
 
     def show_status(self, message):
         toplevel = tk.Toplevel(self.master, width=150, height=60)

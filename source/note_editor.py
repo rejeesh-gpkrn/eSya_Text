@@ -1,6 +1,7 @@
 import tkinter as tk
-from tkinter.scrolledtext import ScrolledText
 from tkinter.font import Font
+from tkinter.scrolledtext import ScrolledText
+
 from source.file_io import FileIO
 
 
@@ -24,3 +25,36 @@ class NoteEditor:
         self.editor.tag_config("BACKGROUND", background="yellow")
         self.editor.tag_configure("HIGHLIGHT", foreground="red")
         self.editor['wrap'] = tk.NONE
+
+    def search_forward(self, text):
+        located_start = self.editor.search(text, tk.INSERT, stopindex=tk.END, forwards=True, nocase=True)
+        located_end = '{}+{}c'.format(located_start, len(text))
+        if located_start is '' or located_end is '':
+            return False
+
+        self.select_editor_location(located_start, located_end)
+
+        # Start position is moved after current found location.
+        self.editor.mark_set(tk.INSERT, located_end)
+        return True
+
+    def search_backward(self, text):
+        located_start = self.editor.search(text, tk.INSERT, stopindex='1.0', backwards=True, nocase=True)
+        located_end = '{}+{}c'.format(located_start, len(text))
+        if located_start is '' or located_end is '':
+            return False
+
+        self.select_editor_location(located_start, located_end)
+
+        # Start position is moved after current found location.
+        self.editor.mark_set(tk.INSERT, located_start)
+        return True
+
+    def select_editor_location(self, selection_start, selection_end):
+        print('Found location start: ', selection_start)
+        print('Found location end: ', selection_end)
+        selection_start_float = float(selection_start)
+        self.editor.tag_remove(tk.SEL, "1.0", 'end')
+        self.editor.tag_add(tk.SEL, selection_start, selection_end)
+        self.editor.focus_force()
+        self.editor.see(selection_start_float)
