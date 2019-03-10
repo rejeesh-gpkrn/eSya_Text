@@ -263,6 +263,10 @@ class Application(tk.Frame):
         if not found_search_element:
             tk_messagebox.showinfo('Search', '{} not found.'.format(text))
 
+    def replace_selected_text(self, new_text):
+        tab_id = self.notebook.select()
+        self.note_editor_dictionary[tab_id].replace_selected_text(new_text)
+
     def pop_out(self):
         pop_out_window = PopOutWindow(self)
         pop_out_window.top.wm_attributes("-topmost", 1)

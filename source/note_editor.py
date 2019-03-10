@@ -50,6 +50,10 @@ class NoteEditor:
         self.editor.mark_set(tk.INSERT, located_start)
         return True
 
+    def replace_selected_text(self, new_text):
+        self.editor.delete('sel.first', 'sel.last')
+        self.editor.insert('insert', new_text)
+
     def select_editor_location(self, selection_start, selection_end):
         print('Found location start: ', selection_start)
         print('Found location end: ', selection_end)

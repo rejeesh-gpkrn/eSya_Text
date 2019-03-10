@@ -88,6 +88,10 @@ class SearchWindow:
 
     def search_forward(self):
         self.parent.search_forward(self.search_text_var.get())
+        if self.switch_on_replace_var.get() == 1:
+            self.parent.replace_selected_text(self.replace_text_var.get())
 
     def search_backward(self):
         self.parent.search_backward(self.search_text_var.get())
+        if self.switch_on_replace_var.get() == 1:
+            self.parent.replace_selected_text(self.replace_text_var.get())
