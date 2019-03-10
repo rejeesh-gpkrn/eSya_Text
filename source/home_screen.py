@@ -8,6 +8,7 @@ from tkinter.font import Font
 from source.command_parser import CommandParser
 from source.configuration import Configuration
 from source.note_editor import NoteEditor
+from source.popout_window import PopOutWindow
 from source.search_window import SearchWindow
 
 
@@ -125,12 +126,12 @@ class Application(tk.Frame):
 
 
         close_icon = tk.PhotoImage(file="source/image/close.gif")
-        self.close = tk.Button(self.toolbar, image=close_icon, command=self.close)
-        self.close.image = close_icon
-        self.close.config(relief=tk.FLAT)
-        self.close.bind('<Enter>', self.on_enter_close)
-        self.close.bind('<Leave>', self.on_leave_close)
-        self.close.pack(side="right")
+        self.close_btn = tk.Button(self.toolbar, image=close_icon, command=self.close)
+        self.close_btn.image = close_icon
+        self.close_btn.config(relief=tk.FLAT)
+        self.close_btn.bind('<Enter>', self.on_enter_close)
+        self.close_btn.bind('<Leave>', self.on_leave_close)
+        self.close_btn.pack(side="right")
 
         # Creates a bold font
         self.bold_font = Font(family="Helvetica", size=14, weight="bold")
@@ -175,11 +176,14 @@ class Application(tk.Frame):
         file_write_status = self.note_editor_dictionary[tab_id].file_io.save()
         if file_write_status is not None:
             tk_messagebox.showerror('Failed', file_write_status)
+            return False
         else:
             self.note_editor_dictionary[tab_id].page_name = os.path.basename(
                 self.note_editor_dictionary[tab_id].file_io.file_name)
             self.notebook.tab(tab_id, text=self.note_editor_dictionary[tab_id].page_name)
             self.show_status('Saved successfully.')
+            self.note_editor_dictionary[tab_id].editor.edit_modified(False)
+            return True
 
     def save_as(self):
         tab_id = self.notebook.select()
@@ -197,8 +201,11 @@ class Application(tk.Frame):
             self.create_editor_frame(note_editor)
             note_editor.editor.insert(tk.END, note_editor.file_io.file_data)
             self.note_editor_dictionary[note_editor.id] = note_editor
+            note_editor.editor.edit_modified(False)
+            return True
         else:
             tk_messagebox.showerror('Failed', file_read_status)
+            return False
 
     def make_highlight(self):
         # tk.TclError exception is raised if not text is selected
@@ -220,12 +227,28 @@ class Application(tk.Frame):
 
     def close(self):
         tab_id = self.notebook.select()
-        self.notebook.forget(tab_id)
-        del self.note_editor_dictionary[tab_id]
+        is_dirty = self.note_editor_dictionary[tab_id].is_dirty()
+        is_user_selection_close = False
+        if is_dirty:
+            dirty_window_close_message = '{} contains changes. ' \
+                                         '\nDo you want to save it?'\
+                                        .format(self.note_editor_dictionary[tab_id].page_name)
+            is_user_selection_close = tk_messagebox.askyesnocancel('Close', dirty_window_close_message)
+        if is_user_selection_close is None:
+            return False
+        elif not is_dirty or not is_user_selection_close:
+            self.notebook.forget(tab_id)
+            del self.note_editor_dictionary[tab_id]
+            return True
+        else:
+            save_status = self.save()
+            return save_status
 
     def search(self):
         search_option_window = SearchWindow(self)
         search_option_window.top.wm_attributes("-topmost", 1)
+        tab_id = self.notebook.select()
+        self.note_editor_dictionary[tab_id].editor.mark_set(tk.INSERT, '1.0')
         self.master.wait_window(search_option_window.top)
 
     def search_forward(self, text):
@@ -241,7 +264,24 @@ class Application(tk.Frame):
             tk_messagebox.showinfo('Search', '{} not found.'.format(text))
 
     def pop_out(self):
-        tk_messagebox.showinfo('Popout', 'Popped out.')
+        pop_out_window = PopOutWindow(self)
+        pop_out_window.top.wm_attributes("-topmost", 1)
+        self.master.wait_window(pop_out_window.top)
+        self.show_status('Pop out closed.')
+
+    def selected_data(self):
+        tab_id = self.notebook.select()
+        if self.note_editor_dictionary[tab_id].editor.tag_ranges(tk.SEL):
+            selected_text = self.note_editor_dictionary[tab_id].editor.get(tk.SEL_FIRST, tk.SEL_LAST)
+            return selected_text
+        return None
+
+    def dock_popup(self, data):
+        self.new()
+        new_tab_id = self.notebook.select()
+        self.note_editor_dictionary[new_tab_id].editor.insert(tk.END, data)
+        doc_page_name = 'DOCK|{}'.format(datetime.now())
+        self.notebook.tab(new_tab_id, text=doc_page_name)
 
     def command_issue(self, event=None):
         tab_id = self.notebook.select()
@@ -292,13 +332,18 @@ class Application(tk.Frame):
         self.search()
 
     def on_delete_window(self):
-        is_user_selection_exit = tk_messagebox.askyesnocancel('Exit', 'Are you sure you want to exit eSya Text?')
-        if is_user_selection_exit:
-            self.master.destroy()
-            print('eSya Text exited.')
-        else:
-            print('User cancelled exit.')
+        present_tab_count = len(self.notebook.tabs())
+        while present_tab_count > 0:
+            close_status = self.close()
+            if not close_status:
+                return
+            else:
+                present_tab_count -= 1
 
+        self.master.destroy()
+        print('eSya Text exited.')
+
+    # TODO: Move to it's own class
     def show_status(self, message):
         toplevel = tk.Toplevel(self.master, width=150, height=60)
         width = self.master.winfo_screenwidth()

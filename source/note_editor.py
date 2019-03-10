@@ -15,7 +15,7 @@ class NoteEditor:
         self.file_io = FileIO()
 
     def create_editor(self, master):
-        self.editor = ScrolledText(master)
+        self.editor = ScrolledText(master, undo=True, autoseparators=True, maxundo=-1)
         self.editor.pack(side="left")
         self.editor.focus()
         self.editor.pack(fill="both", expand=True)
@@ -58,3 +58,6 @@ class NoteEditor:
         self.editor.tag_add(tk.SEL, selection_start, selection_end)
         self.editor.focus_force()
         self.editor.see(selection_start_float)
+
+    def is_dirty(self):
+        return self.editor.edit_modified()
