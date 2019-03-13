@@ -1,3 +1,4 @@
+import argparse
 import os as os
 import tkinter as tk
 import tkinter.messagebox as tk_messagebox
@@ -20,11 +21,27 @@ class Application(tk.Frame):
         super().__init__(master)
         self.master = master
         self.pack()
+        self.global_settings()
         self.note_editor_dictionary = {}
         self.command_var = tk.StringVar()
         self.command_parser = CommandParser()
+        self.command_parser.command_router.note_editor_dictionary = self.note_editor_dictionary
+        self.command_parser.command_router.home_screen = self
         self.create_widgets()
         self.key_binding()
+        self.process_command_line()
+
+    def global_settings(self):
+        s = ttk.Style()
+        s.configure('bb.TButton', padding=1, width=7)
+
+    def process_command_line(self):
+        command_line_parser = argparse.ArgumentParser(description='Open file for read and write.')
+        command_line_parser.add_argument('-f', '--file', metavar='FILE', default='', help='Full path of file to open')
+        command_line_arguments = command_line_parser.parse_args()
+        # print(command_line_arguments.file)
+        if command_line_arguments.file is not None and command_line_arguments.file != '':
+            self.read(command_line_arguments.file)
 
     def key_binding(self):
         self.master.protocol('WM_DELETE_WINDOW', self.on_delete_window)
@@ -114,7 +131,7 @@ class Application(tk.Frame):
         self.command_box.config(fg='#771133')
         self.command_box.bind('<Return>', self.command_issue)
         self.command_box.config(relief=tk.GROOVE)
-        self.command_box.pack(side='left')
+        self.command_box.pack(side='left', ipady=0.01)
 
         command_issue_icon = tk.PhotoImage(file="source/image/command_issue.gif")
         self.command_issue_btn = tk.Button(self.toolbar, image=command_issue_icon, command=self.command_issue)
@@ -158,7 +175,7 @@ class Application(tk.Frame):
 
         note_editor.create_editor(editor_frame)
         note_editor.editor['height'] = 46
-        note_editor.editor['width'] = 180
+        note_editor.editor['width'] = self.master.winfo_screenwidth()
 
         # Set target text box to horizontal scrollbar
         horizontal_scrollbar["command"] = note_editor.editor.xview
@@ -193,9 +210,9 @@ class Application(tk.Frame):
         self.note_editor_dictionary[new_tab_id].editor.insert(tk.END, data_to_copy)
         self.save()
 
-    def read(self):
+    def read(self, external_file_name = None):
         note_editor = NoteEditor()
-        file_read_status = note_editor.file_io.read()
+        file_read_status = note_editor.file_io.read(external_file_name)
         if file_read_status is None:
             note_editor.page_name = os.path.basename(note_editor.file_io.file_name)
             self.create_editor_frame(note_editor)
@@ -211,7 +228,7 @@ class Application(tk.Frame):
         # tk.TclError exception is raised if not text is selected
         try:
             tab_id = self.notebook.select()
-            self.note_editor_dictionary[tab_id].editor.tag_add("BOLDFONT", "sel.first", "sel.last")
+            # self.note_editor_dictionary[tab_id].editor.tag_add("BOLDFONT", "sel.first", "sel.last")
             self.note_editor_dictionary[tab_id].editor.tag_add("HIGHLIGHT", "sel.first", "sel.last")
             self.note_editor_dictionary[tab_id].editor.tag_add("BACKGROUND", "sel.first", "sel.last")
             self.show_status('Selection highlighted.')
@@ -220,7 +237,7 @@ class Application(tk.Frame):
 
     def clear(self):
         tab_id = self.notebook.select()
-        self.note_editor_dictionary[tab_id].editor.tag_remove("BOLDFONT", "1.0", 'end')
+        # self.note_editor_dictionary[tab_id].editor.tag_remove("BOLDFONT", "1.0", 'end')
         self.note_editor_dictionary[tab_id].editor.tag_remove("HIGHLIGHT", "1.0", 'end')
         self.note_editor_dictionary[tab_id].editor.tag_remove("BACKGROUND", "1.0", 'end')
         self.show_status('Highlight cleared.')
@@ -290,7 +307,6 @@ class Application(tk.Frame):
     def command_issue(self, event=None):
         tab_id = self.notebook.select()
         result = self.command_parser.execute(self.command_var.get())
-        # result = Configuration.execute_user_command(self.command_var.get())
         error_message = None
         if result == 1:
             error_message = 'No command specified'
@@ -349,7 +365,7 @@ class Application(tk.Frame):
 
     # TODO: Move to it's own class
     def show_status(self, message):
-        toplevel = tk.Toplevel(self.master, width=150, height=60)
+        toplevel = tk.Toplevel(self.master, width=200, height=60)
         width = self.master.winfo_screenwidth()
         height = self.master.winfo_screenheight()
         w = toplevel.winfo_reqwidth()

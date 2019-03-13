@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 
 
@@ -17,12 +18,10 @@ class PopOutWindow:
         self.toolbar = tk.Frame(self.top, bg="#eee")
         self.toolbar.pack(side="top", fill="x")
 
-        self.catch_btn = tk.Button(self.toolbar, text='Catch', command=self.catch_data)
-        self.catch_btn.config(relief=tk.GROOVE)
+        self.catch_btn = ttk.Button(self.toolbar, text='Catch', command=self.catch_data, style='bb.TButton')
         self.catch_btn.pack(side="left", pady=(2, 2), padx=(2, 1))
 
-        self.dock_btn = tk.Button(self.toolbar, text='Dock', command=self.dock_window)
-        self.dock_btn.config(relief=tk.GROOVE)
+        self.dock_btn = ttk.Button(self.toolbar, text='Dock', command=self.dock_window, style='bb.TButton')
         self.dock_btn.pack(side="left", pady=(2, 2), padx=(1, 2))
 
         # Horizontal scrollbar

@@ -13,9 +13,13 @@ class FileIO:
         self.file_data = None
         self.encoding = None
 
-    def read(self):
-        self.file_name = tk_filedialog.askopenfilename(filetypes=(("All files", "*.*"),
+    def read(self, external_file_name = None):
+        if external_file_name is None:
+            self.file_name = tk_filedialog.askopenfilename(filetypes=(("All files", "*.*"),
                                                                   ("Text files", "*.txt")))
+        else:
+            self.file_name = external_file_name
+
         if self.file_name:
             self.detect_encoding()
             #self.encoding = Configuration.common['encoding'] if 'encoding' in Configuration.common else 'UTF8'
