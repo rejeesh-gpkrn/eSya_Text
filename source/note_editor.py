@@ -14,6 +14,7 @@ class NoteEditor:
         self.bold_font = Font(family="Helvetica", size=14, weight="bold")
         self.font_name = 'arial'
         self.font_size = 12
+        self.font_weight = tk.NORMAL
         self.editor = None
         self.file_io = FileIO()
 
@@ -21,7 +22,7 @@ class NoteEditor:
         self.editor = ScrolledText(master, undo=True, autoseparators=True, maxundo=-1)
 
         # Styling of text area
-        # self.set_editor_font()
+        self.set_editor_font(None, None)
 
         self.editor.pack(side="left")
         self.editor.focus()
@@ -33,14 +34,20 @@ class NoteEditor:
         self.editor.tag_configure("HIGHLIGHT", foreground="red")
         self.editor['wrap'] = tk.NONE
 
-    def set_editor_font(self, font_name, font_size):
+    def set_editor_font(self, font_name, font_size, font_weight=None):
         if font_name is not None:
             self.font_name = font_name
 
         if font_size is not None and int(font_size) > 0:
             self.font_size = font_size
 
-        self.editor['font'] = (self.font_name, self.font_size)
+        if font_weight is not None:
+            self.font_weight = font_weight
+
+        self.editor['font'] = Font(family=self.font_name, size=self.font_size, weight=self.font_weight)
+
+    def set_editor_bgcolor(self, hex_color):
+        self.editor['background'] = hex_color
 
     def search_forward(self, text):
         located_start = self.editor.search(text, tk.INSERT, stopindex=tk.END, forwards=True, nocase=True)

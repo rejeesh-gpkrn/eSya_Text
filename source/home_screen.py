@@ -3,11 +3,12 @@ import os as os
 import tkinter as tk
 import tkinter.messagebox as tk_messagebox
 from datetime import datetime
-from tkinter import ttk
+from tkinter import ttk, colorchooser
 from tkinter.font import Font
 
 from source.command_parser import CommandParser
 from source.configuration import Configuration
+from source.font_chooser import FontChooser
 from source.note_editor import NoteEditor
 from source.popout_window import PopOutWindow
 from source.search_window import SearchWindow
@@ -27,6 +28,7 @@ class Application(tk.Frame):
         self.command_parser = CommandParser()
         self.command_parser.command_router.note_editor_dictionary = self.note_editor_dictionary
         self.command_parser.command_router.home_screen = self
+        self.font_bold_enabled = 0
         self.create_widgets()
         self.key_binding()
         self.process_command_line()
@@ -35,11 +37,13 @@ class Application(tk.Frame):
         s = ttk.Style()
         s.configure('bb.TButton', padding=1, width=7)
 
+        s_menu_button = ttk.Style()
+        s_menu_button.configure('TMenubutton', padding=1, height=1, foreground='gray')
+
     def process_command_line(self):
         command_line_parser = argparse.ArgumentParser(description='Open file for read and write.')
         command_line_parser.add_argument('-f', '--file', metavar='FILE', default='', help='Full path of file to open')
         command_line_arguments = command_line_parser.parse_args()
-        # print(command_line_arguments.file)
         if command_line_arguments.file is not None and command_line_arguments.file != '':
             self.read(command_line_arguments.file)
 
@@ -57,6 +61,18 @@ class Application(tk.Frame):
     def create_widgets(self):
         self.toolbar = tk.Frame(self, bg="#eee")
         self.toolbar.pack(side="top", fill="x")
+
+        self.options_btn = ttk.Menubutton(self.toolbar, text='〓')
+        # relief=tk.RAISED
+        # self.options_btn['width'] = 1
+        self.options_btn.menu = tk.Menu(self.options_btn, tearoff=0)
+        self.options_btn["menu"] = self.options_btn.menu
+        font_menu = tk.Menu(self.toolbar, tearoff=False)
+        font_menu.add_checkbutton(label="Bold", variable=self.font_bold_enabled)
+        font_menu.add_command(label='Font', underline=0, command=self.choose_editor_font)
+        self.options_btn.menu.add_cascade(label='Format', underline=0, menu=font_menu)
+        self.options_btn.menu.add_command(label='Background', underline=0, command=self.choose_editor_bgcolor)
+        self.options_btn.pack(side="left")
 
         new_icon = tk.PhotoImage(file="source/image/new.gif")
         self.new_btn = tk.Button(self.toolbar, image=new_icon, command=self.new)
@@ -181,6 +197,9 @@ class Application(tk.Frame):
         horizontal_scrollbar["command"] = note_editor.editor.xview
         note_editor.editor['xscrollcommand'] = horizontal_scrollbar.set
 
+    def show_options(self):
+        print('options selected')
+
     def new(self):
         note_editor = NoteEditor()
         note_editor.page_name = str(datetime.now())
@@ -303,6 +322,20 @@ class Application(tk.Frame):
         self.note_editor_dictionary[new_tab_id].editor.insert(tk.END, data)
         doc_page_name = 'DOCK|{}'.format(datetime.now())
         self.notebook.tab(new_tab_id, text=doc_page_name)
+
+    def choose_editor_bgcolor(self):
+        (triple, hexstr) = colorchooser.askcolor()
+        if hexstr:
+            tab_id = self.notebook.select()
+            self.note_editor_dictionary[tab_id].set_editor_bgcolor(hexstr)
+
+    def choose_editor_font(self):
+        font_chooser_window = FontChooser(self)
+        font_chooser_window.top.wm_attributes("-topmost", 1)
+        self.master.wait_window(font_chooser_window.top)
+
+    def print_document(self, file_name):
+        os.startfile(file_name, 'print')
 
     def command_issue(self, event=None):
         tab_id = self.notebook.select()
