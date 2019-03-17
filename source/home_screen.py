@@ -28,7 +28,7 @@ class Application(tk.Frame):
         self.command_parser = CommandParser()
         self.command_parser.command_router.note_editor_dictionary = self.note_editor_dictionary
         self.command_parser.command_router.home_screen = self
-        self.font_bold_enabled = 0
+        self.font_bold_enabled = tk.IntVar()
         self.create_widgets()
         self.key_binding()
         self.process_command_line()
@@ -63,15 +63,16 @@ class Application(tk.Frame):
         self.toolbar.pack(side="top", fill="x")
 
         self.options_btn = ttk.Menubutton(self.toolbar, text='〓')
-        # relief=tk.RAISED
-        # self.options_btn['width'] = 1
         self.options_btn.menu = tk.Menu(self.options_btn, tearoff=0)
         self.options_btn["menu"] = self.options_btn.menu
-        font_menu = tk.Menu(self.toolbar, tearoff=False)
-        font_menu.add_checkbutton(label="Bold", variable=self.font_bold_enabled)
-        font_menu.add_command(label='Font', underline=0, command=self.choose_editor_font)
-        self.options_btn.menu.add_cascade(label='Format', underline=0, menu=font_menu)
-        self.options_btn.menu.add_command(label='Background', underline=0, command=self.choose_editor_bgcolor)
+        format_menu = tk.Menu(self.toolbar, tearoff=False)
+        format_menu.add_checkbutton(label="Emphasize", variable=self.font_bold_enabled, command=self.enable_emphasize)
+        format_menu.add_command(label='Font', underline=0, command=self.choose_editor_font)
+        format_menu.add_command(label='Background', underline=0, command=self.choose_editor_bgcolor)
+        self.options_btn.menu.add_cascade(label='Format', underline=0, menu=format_menu)
+        self.options_btn.menu.add_command(label='Print', underline=0,
+                                          command=lambda: self.command_parser.execute('print=this'))
+        self.options_btn.menu.add_command(label='Exit', underline=0, command=self.on_delete_window)
         self.options_btn.pack(side="left")
 
         new_icon = tk.PhotoImage(file="source/image/new.gif")
@@ -247,7 +248,6 @@ class Application(tk.Frame):
         # tk.TclError exception is raised if not text is selected
         try:
             tab_id = self.notebook.select()
-            # self.note_editor_dictionary[tab_id].editor.tag_add("BOLDFONT", "sel.first", "sel.last")
             self.note_editor_dictionary[tab_id].editor.tag_add("HIGHLIGHT", "sel.first", "sel.last")
             self.note_editor_dictionary[tab_id].editor.tag_add("BACKGROUND", "sel.first", "sel.last")
             self.show_status('Selection highlighted.')
@@ -256,7 +256,6 @@ class Application(tk.Frame):
 
     def clear(self):
         tab_id = self.notebook.select()
-        # self.note_editor_dictionary[tab_id].editor.tag_remove("BOLDFONT", "1.0", 'end')
         self.note_editor_dictionary[tab_id].editor.tag_remove("HIGHLIGHT", "1.0", 'end')
         self.note_editor_dictionary[tab_id].editor.tag_remove("BACKGROUND", "1.0", 'end')
         self.show_status('Highlight cleared.')
@@ -333,6 +332,10 @@ class Application(tk.Frame):
         font_chooser_window = FontChooser(self)
         font_chooser_window.top.wm_attributes("-topmost", 1)
         self.master.wait_window(font_chooser_window.top)
+
+    def enable_emphasize(self):
+        tab_id = self.notebook.select()
+        self.note_editor_dictionary[tab_id].set_emphasis(self.font_bold_enabled.get())
 
     def print_document(self, file_name):
         os.startfile(file_name, 'print')

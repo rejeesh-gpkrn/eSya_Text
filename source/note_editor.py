@@ -10,8 +10,6 @@ class NoteEditor:
     def __init__(self):
         self.id = None
         self.page_name = None
-        # Creates a bold font
-        self.bold_font = Font(family="Helvetica", size=14, weight="bold")
         self.font_name = 'arial'
         self.font_size = 12
         self.font_weight = tk.NORMAL
@@ -29,7 +27,6 @@ class NoteEditor:
         self.editor.pack(fill="both", expand=True)
 
         # Configuring style tags
-        # self.editor.tag_configure("BOLDFONT", font=self.bold_font)
         self.editor.tag_config("BACKGROUND", background="yellow")
         self.editor.tag_configure("HIGHLIGHT", foreground="red")
         self.editor['wrap'] = tk.NONE
@@ -48,6 +45,17 @@ class NoteEditor:
 
     def set_editor_bgcolor(self, hex_color):
         self.editor['background'] = hex_color
+
+    def set_emphasis(self, on):
+        if on == 1:
+            bold_font = Font(family=self.font_name, size=self.font_size, weight="bold")
+            self.editor.tag_configure("BOLDFONT", font=bold_font)
+            if self.editor.tag_ranges(tk.SEL):
+                self.editor.tag_add("BOLDFONT", tk.SEL_FIRST, tk.SEL_LAST)
+            else:
+                self.editor.tag_add("BOLDFONT", "1.0", tk.END)
+        else:
+            self.editor.tag_remove("BOLDFONT", "1.0", tk.END)
 
     def search_forward(self, text):
         located_start = self.editor.search(text, tk.INSERT, stopindex=tk.END, forwards=True, nocase=True)
