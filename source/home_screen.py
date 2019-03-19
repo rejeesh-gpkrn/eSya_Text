@@ -1,10 +1,13 @@
 import argparse
 import os as os
+import sys
 import tkinter as tk
 import tkinter.messagebox as tk_messagebox
 from datetime import datetime
 from tkinter import ttk, colorchooser
 from tkinter.font import Font
+
+import pkg_resources
 
 from source.command_parser import CommandParser
 from source.configuration import Configuration
@@ -17,6 +20,8 @@ from source.search_window import SearchWindow
 class Application(tk.Frame):
 
     """Application root class"""
+
+    APPLICATION_ROOT = None
 
     def __init__(self, master=None):
         super().__init__(master)
@@ -34,11 +39,15 @@ class Application(tk.Frame):
         self.process_command_line()
 
     def global_settings(self):
+        # Application.APPLICATION_ROOT = os.path.dirname(sys.modules['__main__'].__file__)
+        print('eSya Text started from location [', Application.APPLICATION_ROOT, ']')
+
         s = ttk.Style()
         s.configure('bb.TButton', padding=1, width=7)
 
+        # Menu style
         s_menu_button = ttk.Style()
-        s_menu_button.configure('TMenubutton', padding=1, height=1, foreground='gray')
+        s_menu_button.configure('TMenubutton', padding=1, height=1, background='lightgray')
 
     def process_command_line(self):
         command_line_parser = argparse.ArgumentParser(description='Open file for read and write.')
@@ -59,23 +68,32 @@ class Application(tk.Frame):
         self.master.bind("<Control-F>", self.control_f)
 
     def create_widgets(self):
+        icon_image_root = os.path.join(Application.APPLICATION_ROOT, 'source', 'image')
+
         self.toolbar = tk.Frame(self, bg="#eee")
         self.toolbar.pack(side="top", fill="x")
 
+        # Menu definition
         self.options_btn = ttk.Menubutton(self.toolbar, text='〓')
-        self.options_btn.menu = tk.Menu(self.options_btn, tearoff=0)
+        self.options_btn.menu = tk.Menu(self.options_btn, tearoff=0, background='white')
         self.options_btn["menu"] = self.options_btn.menu
-        format_menu = tk.Menu(self.toolbar, tearoff=False)
+        format_menu = tk.Menu(self.toolbar, tearoff=False, background='white')
         format_menu.add_checkbutton(label="Emphasize", variable=self.font_bold_enabled, command=self.enable_emphasize)
         format_menu.add_command(label='Font', underline=0, command=self.choose_editor_font)
-        format_menu.add_command(label='Background', underline=0, command=self.choose_editor_bgcolor)
+        color_menu = tk.Menu(self.toolbar, tearoff=False, background='white')
+        color_menu.add_command(label='Background', underline=0, command=self.choose_editor_bgcolor)
+        color_menu.add_command(label='Text Color', underline=0, command=self.choose_editor_fgcolor)
+        format_menu.add_cascade(label='Color', underline=0, menu=color_menu)
         self.options_btn.menu.add_cascade(label='Format', underline=0, menu=format_menu)
         self.options_btn.menu.add_command(label='Print', underline=0,
                                           command=lambda: self.command_parser.execute('print=this'))
+        self.options_btn.menu.add_command(label='Save Profile', underline=0, command=self.save_profile)
         self.options_btn.menu.add_command(label='Exit', underline=0, command=self.on_delete_window)
         self.options_btn.pack(side="left")
 
-        new_icon = tk.PhotoImage(file="source/image/new.gif")
+        new_icon_path = os.path.join(icon_image_root, 'new.gif')
+        new_icon = tk.PhotoImage(file=new_icon_path)
+        # new_icon = tk.PhotoImage(file="source/image/new.gif")
         self.new_btn = tk.Button(self.toolbar, image=new_icon, command=self.new)
         self.new_btn.image = new_icon
         self.new_btn.config(relief=tk.GROOVE)
@@ -83,7 +101,8 @@ class Application(tk.Frame):
         self.new_btn.bind('<Leave>', self.on_leave)
         self.new_btn.pack(side="left")
 
-        open_icon = tk.PhotoImage(file="source/image/open.gif")
+        open_icon_path = os.path.join(icon_image_root, 'open.gif')
+        open_icon = tk.PhotoImage(file=open_icon_path)
         self.read_btn = tk.Button(self.toolbar, image=open_icon, command=self.read)
         self.read_btn.image = open_icon
         self.read_btn.config(relief=tk.GROOVE)
@@ -91,7 +110,8 @@ class Application(tk.Frame):
         self.read_btn.bind('<Leave>', self.on_leave)
         self.read_btn.pack(side="left")
 
-        save_icon = tk.PhotoImage(file="source/image/save.gif")
+        save_icon_path = os.path.join(icon_image_root, 'save.gif')
+        save_icon = tk.PhotoImage(file=save_icon_path)
         self.save_btn = tk.Button(self.toolbar, image=save_icon, command=self.save)
         self.save_btn.image = save_icon
         self.save_btn.config(relief=tk.GROOVE)
@@ -99,7 +119,8 @@ class Application(tk.Frame):
         self.save_btn.bind('<Leave>', self.on_leave)
         self.save_btn.pack(side="left")
 
-        save_as_icon = tk.PhotoImage(file="source/image/save_as.gif")
+        saveas_icon_path = os.path.join(icon_image_root, 'save_as.gif')
+        save_as_icon = tk.PhotoImage(file=saveas_icon_path)
         self.save_as_btn = tk.Button(self.toolbar, image=save_as_icon, command=self.save_as)
         self.save_as_btn.image = save_as_icon
         self.save_as_btn.config(relief=tk.GROOVE)
@@ -107,7 +128,8 @@ class Application(tk.Frame):
         self.save_as_btn.bind('<Leave>', self.on_leave)
         self.save_as_btn.pack(side="left")
 
-        highlight_icon = tk.PhotoImage(file="source/image/highlight.gif")
+        highlight_icon_path = os.path.join(icon_image_root, 'highlight.gif')
+        highlight_icon = tk.PhotoImage(file=highlight_icon_path)
         self.highlight_btn = tk.Button(self.toolbar, image=highlight_icon, command=self.make_highlight)
         self.highlight_btn.image = highlight_icon
         self.highlight_btn.config(relief=tk.GROOVE)
@@ -115,7 +137,8 @@ class Application(tk.Frame):
         self.highlight_btn.bind('<Leave>', self.on_leave)
         self.highlight_btn.pack(side="left")
 
-        clear_icon = tk.PhotoImage(file="source/image/clear.gif")
+        clear_icon_path = os.path.join(icon_image_root, 'clear.gif')
+        clear_icon = tk.PhotoImage(file=clear_icon_path)
         self.clear_btn = tk.Button(self.toolbar, image=clear_icon, command=self.clear)
         self.clear_btn.image = clear_icon
         self.clear_btn.config(relief=tk.GROOVE)
@@ -123,7 +146,8 @@ class Application(tk.Frame):
         self.clear_btn.bind('<Leave>', self.on_leave)
         self.clear_btn.pack(side="left")
 
-        search_icon = tk.PhotoImage(file="source/image/search.gif")
+        search_icon_path = os.path.join(icon_image_root, 'search.gif')
+        search_icon = tk.PhotoImage(file=search_icon_path)
         self.searrch_btn = tk.Button(self.toolbar, image=search_icon, command=self.search)
         self.searrch_btn.image = search_icon
         self.searrch_btn.config(relief=tk.GROOVE)
@@ -131,7 +155,8 @@ class Application(tk.Frame):
         self.searrch_btn.bind('<Leave>', self.on_leave)
         self.searrch_btn.pack(side="left")
 
-        popout_icon = tk.PhotoImage(file="source/image/popout.gif")
+        popout_icon_path = os.path.join(icon_image_root, 'popout.gif')
+        popout_icon = tk.PhotoImage(file=popout_icon_path)
         self.popout_btn = tk.Button(self.toolbar, image=popout_icon, command=self.pop_out)
         self.popout_btn.image = popout_icon
         self.popout_btn.config(relief=tk.GROOVE)
@@ -150,7 +175,8 @@ class Application(tk.Frame):
         self.command_box.config(relief=tk.GROOVE)
         self.command_box.pack(side='left', ipady=0.01)
 
-        command_issue_icon = tk.PhotoImage(file="source/image/command_issue.gif")
+        command_issue_icon_path = os.path.join(icon_image_root, 'command_issue.gif')
+        command_issue_icon = tk.PhotoImage(file=command_issue_icon_path)
         self.command_issue_btn = tk.Button(self.toolbar, image=command_issue_icon, command=self.command_issue)
         self.command_issue_btn.image = command_issue_icon
         self.command_issue_btn.config(relief=tk.GROOVE)
@@ -158,8 +184,8 @@ class Application(tk.Frame):
         self.command_issue_btn.bind('<Leave>', self.on_leave)
         self.command_issue_btn.pack(side="left")
 
-
-        close_icon = tk.PhotoImage(file="source/image/close.gif")
+        close_icon_path = os.path.join(icon_image_root, 'close.gif')
+        close_icon = tk.PhotoImage(file=close_icon_path)
         self.close_btn = tk.Button(self.toolbar, image=close_icon, command=self.close)
         self.close_btn.image = close_icon
         self.close_btn.config(relief=tk.FLAT)
@@ -171,7 +197,7 @@ class Application(tk.Frame):
         self.bold_font = Font(family="Helvetica", size=14, weight="bold")
 
         # Notebook definition
-        self.notebook = ttk.Notebook(self)
+        self.notebook = ttk.Notebook(self, width=self.master.winfo_screenwidth())
         self.notebook.pack(fill='both', expand=True)
 
         # Still not persistence found
@@ -180,8 +206,9 @@ class Application(tk.Frame):
     def create_editor_frame(self, note_editor):
         # Editor section
         editor_frame = tk.Frame(self.notebook, width=self.master.winfo_screenwidth(), height=50)
-        editor_frame.pack(side="top")
-        editor_frame.pack(fill="both", expand=True)
+        # editor_frame.pack(side="top")
+        # editor_frame.pack(fill="both", expand=True)
+        editor_frame.pack(side='top', fill='both', expand=True)
         self.notebook.add(editor_frame, text=note_editor.page_name)
         note_editor.id = self.notebook.tabs()[-1]
         self.notebook.select(note_editor.id)
@@ -328,6 +355,12 @@ class Application(tk.Frame):
             tab_id = self.notebook.select()
             self.note_editor_dictionary[tab_id].set_editor_bgcolor(hexstr)
 
+    def choose_editor_fgcolor(self):
+        (triple, hexstr) = colorchooser.askcolor()
+        if hexstr:
+            tab_id = self.notebook.select()
+            self.note_editor_dictionary[tab_id].set_editor_fgcolor(hexstr)
+
     def choose_editor_font(self):
         font_chooser_window = FontChooser(self)
         font_chooser_window.top.wm_attributes("-topmost", 1)
@@ -398,6 +431,9 @@ class Application(tk.Frame):
 
         self.master.destroy()
         print('eSya Text exited.')
+
+    def save_profile(self):
+        pass
 
     # TODO: Move to it's own class
     def show_status(self, message):

@@ -46,6 +46,9 @@ class NoteEditor:
     def set_editor_bgcolor(self, hex_color):
         self.editor['background'] = hex_color
 
+    def set_editor_fgcolor(self, hex_color):
+        self.editor['foreground'] = hex_color
+
     def set_emphasis(self, on):
         if on == 1:
             bold_font = Font(family=self.font_name, size=self.font_size, weight="bold")

@@ -1,5 +1,8 @@
+import os
 import tkinter as tk
 
+# from source.home_screen import Application
+import source.home_screen as home_screen
 
 class SearchWindow:
     """Search dialog for entering user options"""
@@ -25,6 +28,8 @@ class SearchWindow:
         self.create_widgets()
 
     def create_widgets(self):
+        icon_image_root = os.path.join(home_screen.Application.APPLICATION_ROOT, 'source', 'image')
+
         self.container_frame = tk.LabelFrame(self.top, text='Search options', width=50)
         self.container_frame.pack(side="top", pady=(0, 3), padx=(3, 0))
         # self.container_frame.pack(fill="y", expand=True)
@@ -40,13 +45,15 @@ class SearchWindow:
         # self.container_frame_btn.pack(side='left', pady=(3, 3), padx=(3, 3))
         # self.container_frame_btn.grid(row=0, column=0, pady=(3, 3), padx=(3, 3))
 
-        search_forward__icon = tk.PhotoImage(file="source/image/search_forward.gif")
+        search_forward_icon_path = os.path.join(icon_image_root, 'search_forward.gif')
+        search_forward__icon = tk.PhotoImage(file=search_forward_icon_path)
         self.search_next_btn = tk.Button(self.container_frame, image=search_forward__icon,
                                          command=self.search_forward)
         self.search_next_btn.image = search_forward__icon
         self.search_next_btn.grid(row=0, column=2, padx=(5, 5))
 
-        search_backward__icon = tk.PhotoImage(file="source/image/search_backward.gif")
+        search_backward_icon_path = os.path.join(icon_image_root, 'search_backward.gif')
+        search_backward__icon = tk.PhotoImage(file=search_backward_icon_path)
         self.search_back_btn = tk.Button(self.container_frame, image=search_backward__icon,
                                          command=self.search_backward)
         self.search_back_btn.image = search_backward__icon
