@@ -7,6 +7,8 @@ from datetime import datetime
 from tkinter import ttk, colorchooser
 from tkinter.font import Font
 
+import threading
+
 import pkg_resources
 
 from source.command_parser import CommandParser
@@ -34,6 +36,7 @@ class Application(tk.Frame):
         self.command_parser.command_router.note_editor_dictionary = self.note_editor_dictionary
         self.command_parser.command_router.home_screen = self
         self.font_bold_enabled = tk.IntVar()
+        self.font_wrap_enabled = tk.IntVar()
         self.create_widgets()
         self.key_binding()
         self.process_command_line()
@@ -55,6 +58,40 @@ class Application(tk.Frame):
         command_line_arguments = command_line_parser.parse_args()
         if command_line_arguments.file is not None and command_line_arguments.file != '':
             self.read(command_line_arguments.file)
+        else:
+            self.new()
+
+        #    tab_list_file_name = os.path.join(Application.APPLICATION_ROOT, 'tabs.lst')
+        #    if os.path.isfile(tab_list_file_name):
+        #        print('Other instance is already running. Just update file.')
+        #        tab_list_file = open(tab_list_file_name, 'w')
+        #        tab_list_file.write(command_line_arguments.file)
+        #        tab_list_file.close()
+        #        self.master.destroy()
+        #    else:
+        #        print('Since this instance is the first boot, creating tab list file.')
+        #        tab_list_file = open(tab_list_file_name, 'w')
+        #        tab_list_file.close()
+        #        self.read(command_line_arguments.file)
+
+    #    self.repeat = threading.Timer(1, self.open_next_file)
+    #    self.repeat.start()
+
+    #def open_next_file(self):
+    #    first_line = None
+    #   tab_list_file_name = os.path.join(Application.APPLICATION_ROOT, 'tabs.lst')
+    #   with open(tab_list_file_name, 'r') as tab_list_file:
+    #        first_line = tab_list_file.readline()
+
+    #   with open(tab_list_file_name, 'w') as tab_list_file:
+    #        tab_list_file.write('')
+
+    #   if first_line is not None and first_line != '':
+    #       self.read(first_line)
+
+    #   print('Processed', first_line)
+    #   self.repeat = threading.Timer(1, self.open_next_file)
+    #    self.repeat.start()
 
     def key_binding(self):
         self.master.protocol('WM_DELETE_WINDOW', self.on_delete_window)
@@ -68,7 +105,7 @@ class Application(tk.Frame):
         self.master.bind("<Control-F>", self.control_f)
 
     def create_widgets(self):
-        icon_image_root = os.path.join(Application.APPLICATION_ROOT, 'source', 'image')
+        icon_image_root = os.path.join(Application.APPLICATION_ROOT, 'image')
 
         self.toolbar = tk.Frame(self, bg="#eee")
         self.toolbar.pack(side="top", fill="x")
@@ -79,6 +116,7 @@ class Application(tk.Frame):
         self.options_btn["menu"] = self.options_btn.menu
         format_menu = tk.Menu(self.toolbar, tearoff=False, background='white')
         format_menu.add_checkbutton(label="Emphasize", variable=self.font_bold_enabled, command=self.enable_emphasize)
+        format_menu.add_checkbutton(label="Wrap", variable=self.font_wrap_enabled, command=self.toggle_wrap)
         format_menu.add_command(label='Font', underline=0, command=self.choose_editor_font)
         color_menu = tk.Menu(self.toolbar, tearoff=False, background='white')
         color_menu.add_command(label='Background', underline=0, command=self.choose_editor_bgcolor)
@@ -93,7 +131,6 @@ class Application(tk.Frame):
 
         new_icon_path = os.path.join(icon_image_root, 'new.gif')
         new_icon = tk.PhotoImage(file=new_icon_path)
-        # new_icon = tk.PhotoImage(file="source/image/new.gif")
         self.new_btn = tk.Button(self.toolbar, image=new_icon, command=self.new)
         self.new_btn.image = new_icon
         self.new_btn.config(relief=tk.GROOVE)
@@ -201,7 +238,7 @@ class Application(tk.Frame):
         self.notebook.pack(fill='both', expand=True)
 
         # Still not persistence found
-        self.new()
+        # self.new()
 
     def create_editor_frame(self, note_editor):
         # Editor section
@@ -270,6 +307,15 @@ class Application(tk.Frame):
         else:
             tk_messagebox.showerror('Failed', file_read_status)
             return False
+
+    def sftp_read_callback(self, sftp_file_io):
+        note_editor = NoteEditor()
+        note_editor.page_name = os.path.basename(sftp_file_io.remote_command)
+        self.create_editor_frame(note_editor)
+        note_editor.editor.insert(tk.END, sftp_file_io.remote_response)
+        self.note_editor_dictionary[note_editor.id] = note_editor
+        note_editor.editor.edit_modified(False)
+        return True
 
     def make_highlight(self):
         # tk.TclError exception is raised if not text is selected
@@ -369,6 +415,10 @@ class Application(tk.Frame):
     def enable_emphasize(self):
         tab_id = self.notebook.select()
         self.note_editor_dictionary[tab_id].set_emphasis(self.font_bold_enabled.get())
+
+    def toggle_wrap(self):
+        tab_id = self.notebook.select()
+        self.note_editor_dictionary[tab_id].toggle_wrap(self.font_wrap_enabled.get())
 
     def print_document(self, file_name):
         os.startfile(file_name, 'print')

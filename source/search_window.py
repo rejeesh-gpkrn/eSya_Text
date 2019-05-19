@@ -28,7 +28,7 @@ class SearchWindow:
         self.create_widgets()
 
     def create_widgets(self):
-        icon_image_root = os.path.join(home_screen.Application.APPLICATION_ROOT, 'source', 'image')
+        icon_image_root = os.path.join(home_screen.Application.APPLICATION_ROOT, 'image')
 
         self.container_frame = tk.LabelFrame(self.top, text='Search options', width=50)
         self.container_frame.pack(side="top", pady=(0, 3), padx=(3, 0))

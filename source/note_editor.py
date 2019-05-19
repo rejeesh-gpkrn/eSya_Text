@@ -1,4 +1,6 @@
 import tkinter as tk
+import re
+from pathlib import Path
 from tkinter.font import Font
 from tkinter.scrolledtext import ScrolledText
 
@@ -15,6 +17,7 @@ class NoteEditor:
         self.font_weight = tk.NORMAL
         self.editor = None
         self.file_io = FileIO()
+        self.syntax_file_io = FileIO()
 
     def create_editor(self, master):
         self.editor = ScrolledText(master, undo=True, autoseparators=True, maxundo=-1)
@@ -30,6 +33,8 @@ class NoteEditor:
         self.editor.tag_config("BACKGROUND", background="yellow")
         self.editor.tag_configure("HIGHLIGHT", foreground="red")
         self.editor['wrap'] = tk.NONE
+
+        self.editor.bind('<Button-3>', self.rClicker, add='')
 
     def set_editor_font(self, font_name, font_size, font_weight=None):
         if font_name is not None:
@@ -59,6 +64,12 @@ class NoteEditor:
                 self.editor.tag_add("BOLDFONT", "1.0", tk.END)
         else:
             self.editor.tag_remove("BOLDFONT", "1.0", tk.END)
+
+    def toggle_wrap(self, on):
+        if on == 1:
+            self.editor['wrap'] = tk.WORD
+        else:
+            self.editor['wrap'] = tk.NONE
 
     def search_forward(self, text):
         located_start = self.editor.search(text, tk.INSERT, stopindex=tk.END, forwards=True, nocase=True)
@@ -99,3 +110,79 @@ class NoteEditor:
 
     def is_dirty(self):
         return self.editor.edit_modified()
+
+    def rClicker(self, e):
+        ''' right click context menu for all Tk Entry and Text widgets
+        '''
+
+        try:
+            def rClick_Copy(e, apnd=0):
+                e.widget.event_generate('<Control-c>')
+
+            def rClick_Cut(e):
+                e.widget.event_generate('<Control-x>')
+
+            def rClick_Paste(e):
+                e.widget.event_generate('<Control-v>')
+
+            def rClick_Highlight_Keyword(e):
+                self.highlight_syntax(True)
+
+            e.widget.focus()
+
+            nclst = [
+                (' Cut', lambda e=e: rClick_Cut(e)),
+                (' Copy', lambda e=e: rClick_Copy(e)),
+                (' Paste', lambda e=e: rClick_Paste(e)),
+                (' Highlight Keyword', lambda e=e: rClick_Highlight_Keyword(e)),
+            ]
+
+            rmenu = tk.Menu(None, tearoff=0, takefocus=0)
+
+            for (txt, cmd) in nclst:
+                rmenu.add_command(label=txt, command=cmd)
+
+            rmenu.tk_popup(e.x_root + 40, e.y_root + 10, entry="0")
+
+        except tk.TclError:
+            print
+            ' - rClick menu, something wrong'
+            pass
+
+        return "break"
+
+    def highlight_syntax(self, enable=True):
+        syntax_file = Path(Path(self.file_io.file_name).suffix[1:]).with_suffix('.hs')
+        print(syntax_file)
+
+        numbers = re.findall(r'\d{1,3}', self.file_io.file_data)
+        self.editor.tag_config('tg_kw', foreground='blue')
+        self.editor.tag_config('tg_num', foreground='orange')
+        keywords = ['package', 'public', 'private', 'abstract', 'internal', 'new', 'static', 'final', 'long', 'extends',
+                    'class', 'import', 'null', 'for', 'if', 'return', 'int', 'char', 'float', 'double', 'implements']
+        for keyword in keywords:
+            self.editor.mark_set(tk.INSERT, '1.0')
+            while True:
+                located_end = self.highlight_keyword(keyword+' ', 'tg_kw')
+                if located_end == 0:
+                    break
+                self.editor.mark_set(tk.INSERT, located_end)
+
+        self.editor.mark_set(tk.INSERT, '1.0')
+        for each_number in numbers:
+            located_end = self.highlight_keyword(each_number, 'tg_num')
+            if located_end != 0:
+                self.editor.mark_set(tk.INSERT, located_end)
+
+        print("Syntax highlight executed.")
+
+    def highlight_keyword(self, text, tag):
+        located_start = self.editor.search(text, tk.INSERT, stopindex=tk.END, forwards=True, nocase=False)
+        located_end = '{}+{}c'.format(located_start, len(text))
+        print(located_start, ',', located_end)
+        print('keyword', text)
+        if located_start is '' or located_end is '':
+            return 0
+
+        self.editor.tag_add(tag, located_start, located_end)
+        return located_end
