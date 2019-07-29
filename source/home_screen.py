@@ -6,6 +6,7 @@ import tkinter.messagebox as tk_messagebox
 from datetime import datetime
 from tkinter import ttk, colorchooser
 from tkinter.font import Font
+import urllib.parse
 
 import threading
 
@@ -13,6 +14,7 @@ import pkg_resources
 
 from source.command_parser import CommandParser
 from source.configuration import Configuration
+from source.drag_drop_handler import DragDropHandler
 from source.font_chooser import FontChooser
 from source.note_editor import NoteEditor
 from source.popout_window import PopOutWindow
@@ -37,6 +39,7 @@ class Application(tk.Frame):
         self.command_parser.command_router.home_screen = self
         self.font_bold_enabled = tk.IntVar()
         self.font_wrap_enabled = tk.IntVar()
+        #self.file_drop_handler = DragDropHandler(self.master)
         self.create_widgets()
         self.key_binding()
         self.process_command_line()
@@ -123,6 +126,12 @@ class Application(tk.Frame):
         color_menu.add_command(label='Text Color', underline=0, command=self.choose_editor_fgcolor)
         format_menu.add_cascade(label='Color', underline=0, menu=color_menu)
         self.options_btn.menu.add_cascade(label='Format', underline=0, menu=format_menu)
+
+        # Convert Menu
+        convert_menu = tk.Menu(self.toolbar, tearoff=False, background='white')
+        convert_menu.add_command(label='Canonicalize', underline=0, command=self.canonicalize_editor_data)
+        self.options_btn.menu.add_cascade(label='Convert', underline=0, menu=convert_menu)
+
         self.options_btn.menu.add_command(label='Print', underline=0,
                                           command=lambda: self.command_parser.execute('print=this'))
         self.options_btn.menu.add_command(label='Save Profile', underline=0, command=self.save_profile)
@@ -411,6 +420,19 @@ class Application(tk.Frame):
         font_chooser_window = FontChooser(self)
         font_chooser_window.top.wm_attributes("-topmost", 1)
         self.master.wait_window(font_chooser_window.top)
+
+    def canonicalize_editor_data(self):
+        selected_data = self.selected_data()
+        if selected_data is None:
+            tk_messagebox.showwarning('Warning', 'Select text to canonicalize')
+            return
+
+        converted_data = urllib.parse.unquote(selected_data)
+        pop_out_window = PopOutWindow(self)
+        pop_out_window.editor.insert(tk.END, converted_data)
+        pop_out_window.top.wm_attributes("-topmost", 1)
+        self.master.wait_window(pop_out_window.top)
+        self.show_status('Pop out closed.')
 
     def enable_emphasize(self):
         tab_id = self.notebook.select()
