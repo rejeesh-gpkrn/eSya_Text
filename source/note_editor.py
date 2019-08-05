@@ -153,13 +153,20 @@ class NoteEditor:
 
     def highlight_syntax(self, enable=True):
         syntax_file = Path(Path(self.file_io.file_name).suffix[1:]).with_suffix('.hs')
-        print(syntax_file)
+        hs_config_data = Configuration.get_hs_configuration(syntax_file)
+        if hs_config_data is None:
+            print('No syntax file ', syntax_file)
+            return
+        #print(hs_config_data)
+        keywords = hs_config_data['keyword']['tags']
+        keyword_fgcolor = hs_config_data['keyword']['color']
+        constant_fgcolor = hs_config_data['constant']['color']
 
         numbers = re.findall(r'\d{1,3}', self.file_io.file_data)
-        self.editor.tag_config('tg_kw', foreground='blue')
-        self.editor.tag_config('tg_num', foreground='orange')
-        keywords = ['package', 'public', 'private', 'abstract', 'internal', 'new', 'static', 'final', 'long', 'extends',
-                    'class', 'import', 'null', 'for', 'if', 'return', 'int', 'char', 'float', 'double', 'implements']
+        self.editor.tag_config('tg_kw', foreground=keyword_fgcolor)
+        self.editor.tag_config('tg_num', foreground=constant_fgcolor)
+        #keywords = ['package', 'public', 'private', 'abstract', 'internal', 'new', 'static', 'final', 'long', 'extends',
+        #            'class', 'import', 'null', 'for', 'if', 'return', 'int', 'char', 'float', 'double', 'implements']
         for keyword in keywords:
             self.editor.mark_set(tk.INSERT, '1.0')
             while True:

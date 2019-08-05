@@ -1,0 +1,1 @@
+{"keyword": {"color": "blue", "tags": ["package", "public", "private", "abstract", "internal", "new", "static", "final", "long", "extends", "class", "import", "null", "for", "if", "return", "int", "char", "float", "double", "implements"]}, "constant": {"color": "orange", "tags": [1, 2, 3, 4, 5, 10]}}

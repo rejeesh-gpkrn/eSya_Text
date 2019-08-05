@@ -19,6 +19,8 @@ from source.font_chooser import FontChooser
 from source.note_editor import NoteEditor
 from source.popout_window import PopOutWindow
 from source.search_window import SearchWindow
+from source.socket_client import SocketClient
+from source.socket_server import SocketServer
 
 
 class Application(tk.Frame):
@@ -42,11 +44,13 @@ class Application(tk.Frame):
         #self.file_drop_handler = DragDropHandler(self.master)
         self.create_widgets()
         self.key_binding()
+        self.socket_server = None
         self.process_command_line()
 
     def global_settings(self):
         # Application.APPLICATION_ROOT = os.path.dirname(sys.modules['__main__'].__file__)
         print('eSya Text started from location [', Application.APPLICATION_ROOT, ']')
+        Configuration.APPLICATION_ROOT = Application.APPLICATION_ROOT
 
         s = ttk.Style()
         s.configure('bb.TButton', padding=1, width=7)
@@ -59,10 +63,22 @@ class Application(tk.Frame):
         command_line_parser = argparse.ArgumentParser(description='Open file for read and write.')
         command_line_parser.add_argument('-f', '--file', metavar='FILE', default='', help='Full path of file to open')
         command_line_arguments = command_line_parser.parse_args()
-        if command_line_arguments.file is not None and command_line_arguments.file != '':
-            self.read(command_line_arguments.file)
+
+        # Try create one socket client to sent file path.
+        socket_client = SocketClient(self, '127.0.0.1', 50007)
+        file_send_status = socket_client.try_send_file_open(command_line_arguments.file)
+
+        # If already existing application not detected, opens up new one.
+        if file_send_status is False:
+            if command_line_arguments.file is not None and command_line_arguments.file != '':
+                self.read(command_line_arguments.file)
+            else:
+                self.new()
+
+            self.socket_server = SocketServer(self, '127.0.0.1', 50007)
+            self.socket_server.start()
         else:
-            self.new()
+            self.master.destroy()
 
         #    tab_list_file_name = os.path.join(Application.APPLICATION_ROOT, 'tabs.lst')
         #    if os.path.isfile(tab_list_file_name):
@@ -501,6 +517,7 @@ class Application(tk.Frame):
             else:
                 present_tab_count -= 1
 
+        self.socket_server.destroy_socket()
         self.master.destroy()
         print('eSya Text exited.')
 
